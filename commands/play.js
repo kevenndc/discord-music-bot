@@ -1,26 +1,35 @@
 const ytdl = require('ytdl-core')
 const axios = require('axios')
+const {parseYoutubeQuery, parseCommandQuery} = require('../helpers/MessageParser')
+const MessageBuilder = require('../helpers/MessageBuilder')
 
 module.exports = {
   name : 'play',
   async execute(msg) {
     try {
-      const args = msg.content.substr(msg.content.indexOf(' ') + 1)
+      const args = parseCommandQuery(msg)
       const queue = msg.client.queue
       const serverQueue = queue.get(msg.guild.id)
       const voiceChannel = msg.member.voiceChannel
       let videoId = ''
 
       if (!voiceChannel)
-        return msg.channel.send('Você precisa estar em uma canal de voz para tocar música!')
+        return MessageBuilder.noVoiceChannel(msg)
 
       const permissions = voiceChannel.permissionsFor(msg.client.user)
 
       if (!permissions.has('CONNECT') || !permissions.has('SPEAK'))
-        return msg.channel.send('Eu preciso de permissão  para me conectar e e falar no canal de voz')
+        return MessageBuilder.connectionError(msg)
 
       try {
-        videoId = await this.getVideoId(args)
+        //verify if command query is a youtube query ([query])
+        if (args.startsWith('[')) {
+          ytQuery = parseYoutubeQuery(args)
+          MessageBuilder.searching(msg, ytQuery)
+          videoId = await this.getVideoId(ytQuery)
+
+        } else videoId = args
+         
       } catch (error) {
         throw error
       }
@@ -47,7 +56,6 @@ module.exports = {
 
         try {
           var conn = await voiceChannel.join()
-          msg.channel.send('Boa tarde 👍')
           queueConstruct.connection = conn
 
           this.play(msg, queueConstruct.songs[0])
@@ -60,7 +68,7 @@ module.exports = {
         serverQueue.songs.push(song)
         console.log(serverQueue.songs)
 
-        return msg.channel.send(`${song.title} foi adicionado à fila de reprodução.`)
+        MessageBuilder.addingToQueue(msg, song.title)
 
         //return song
     
@@ -80,7 +88,8 @@ module.exports = {
   
       return
     }
-  
+    
+    MessageBuilder.playing(msg, song.title)
     const dispatcher = serverQueue.connection.playStream(ytdl(song.url, {filter : 'audioonly'}))
       .on('end', () => {
         console.log('A música terminou!')
@@ -94,16 +103,11 @@ module.exports = {
     dispatcher.setVolumeLogarithmic(serverQueue.volume / 5)
   },
 
-  async getVideoId(args) {
-    if (!args.startsWith('[')) return args
-  
-    const startPos = args.indexOf('[') + 1
-    const endPos = args.indexOf(']')
-    const ytQuery = args.substring(startPos, endPos)
+  async getVideoId(query) {  
+    
     let videoId = ''
-    //console.log(`query = ${ytQuery}`)
   
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet,id&maxResults=1&q=${ytQuery}&type=video&key=${process.env.API_KEY}`
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet,id&maxResults=1&q=${query}&type=video&key=${process.env.API_KEY}`
   
     await axios.get(url)
       .then(response => {
