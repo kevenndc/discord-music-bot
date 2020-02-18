@@ -8,7 +8,7 @@ const {prefix} = require('./config.json')
 const fs = require('fs')
 const {parseCommandName} = require('./helpers/MessageParser')
 
-getCommands('./commands')
+setCommands('./commands')
 
 client.once('ready', () => {
   console.log('Ready!')
@@ -43,11 +43,15 @@ client.on('message', async msg => {
 })
 
 //Adds each command of 'commands' folder and return
-function getCommands(folder) {
+function setCommands(folder) {
   fs.readdirSync(folder).filter(file => file.endsWith('.js')).forEach(file => {
     const command = require(`${folder}/${file}`)
     client.commands.set(command.name, command)
   })
+}
+
+function getCommands(client) {
+  return client.commands
 }
 
 client.login(process.env.BOT_TOKEN);

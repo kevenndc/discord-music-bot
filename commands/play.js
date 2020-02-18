@@ -5,6 +5,8 @@ const MessageBuilder = require('../helpers/MessageBuilder')
 
 module.exports = {
   name : 'play',
+  description : `Procura e toca a música passada depois do comando '/play'
+                Como usar: /play LINK DO YOUTUBE ou /play [pesquisa]`,
   async execute(msg) {
     try {
       const args = parseCommandQuery(msg)

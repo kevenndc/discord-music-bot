@@ -1,5 +1,6 @@
 module.exports =  {
   name : 'stop',
+  description: `Para de tocar música`,
   async execute(msg) {
     const serverQueue = msg.client.queue.get(msg.guild.id)
 

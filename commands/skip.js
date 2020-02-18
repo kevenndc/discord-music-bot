@@ -1,5 +1,6 @@
 module.exports = {
   name : 'skip',
+  description : `Pula para a próxima da música da fila, se houver`,
   async execute(msg) {
     const serverQueue = msg.client.queue.get(msg.guild.id)
 
